@@ -1,35 +1,70 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import ExpenseForm from "./components/ExpenseForm";
+import ExpenseTable from "./components/ExpenseTable";
+import SearchBar from "./components/SearchBar";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [expenses, setExpenses] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState(null);
+  const [sortDirection, setSortDirection] = useState("asc");
+
+  const filteredExpenses = expenses.filter(
+    (expense) =>
+      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getSortedExpenses = () => {
+    const sorted = [...filteredExpenses];
+    if (!sortBy) return sorted;
+
+    sorted.sort((a, b) => {
+      if (sortBy === "amount") {
+        return sortDirection === "asc"
+          ? a.amount - b.amount
+          : b.amount - a.amount;
+      } else if (sortBy === "date") {
+        return sortDirection === "asc"
+          ? new Date(a.date) - new Date(b.date)
+          : new Date(b.date) - new Date(a.date);
+      } else {
+        return sortDirection === "asc"
+          ? a[sortBy].localeCompare(b[sortBy])
+          : b[sortBy].localeCompare(a[sortBy]);
+      }
+    });
+
+    return sorted;
+  };
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const handleDeleteExpense = (indexToDelete) => {
+    setExpenses((prevExpenses) =>
+      prevExpenses.filter((_, index) => index !== indexToDelete)
+    );
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="app-container">
+      <h1>Expense Tracker</h1>
+      <ExpenseForm setExpenses={setExpenses} />
+      <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+      <ExpenseTable
+        expenses={getSortedExpenses()}
+        onSort={handleSort}
+        onDelete={handleDeleteExpense} 
+      />
+    </div>
+  );
 }
 
-export default App
+export default App;
